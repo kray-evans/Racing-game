@@ -242,30 +242,25 @@ game_code = """
         function drawCar(x, y, width, height, color, isPlayer = false) {
             ctx.save();
             
-            // Thân xe hoạt hình bo góc cực mềm mại
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.roundRect(x, y, width, height, 16);
             ctx.fill();
 
-            // Viền sáng bóng (Glossy highlight) phong cách hoạt hình
             ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
             ctx.beginPath();
             ctx.roundRect(x + 4, y + 4, width - 8, height / 3, 10);
             ctx.fill();
 
-            // Kính chắn gió to tròn thân thiện
             ctx.fillStyle = "#2d3436";
             ctx.beginPath();
             ctx.roundRect(x + 6, y + 16, width - 12, 18, 6);
             ctx.fill();
 
-            // Kính sau
             ctx.beginPath();
             ctx.roundRect(x + 8, y + height - 20, width - 16, 10, 4);
             ctx.fill();
 
-            // Bánh xe hoạt hình đáng yêu
             ctx.fillStyle = "#2d3436";
             ctx.beginPath();
             ctx.roundRect(x - 6, y + 12, 6, 18, 3);
@@ -274,14 +269,12 @@ game_code = """
             ctx.roundRect(x + width, y + height - 24, 6, 18, 3);
             ctx.fill();
 
-            // Mắt/Đèn pha to tròn lung linh
             ctx.fillStyle = isPlayer ? "#ffeaa7" : "#fab1a0";
             ctx.beginPath();
             ctx.arc(x + 9, y + 4, 5, 0, Math.PI * 2);
             ctx.arc(x + width - 9, y + 4, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Má hồng hoạt hình siêu cute cho xe người chơi
             if (isPlayer) {
                 ctx.fillStyle = "#ff7675";
                 ctx.beginPath();
@@ -294,18 +287,80 @@ game_code = """
         }
 
         function draw() {
-            // Nền đường đua chính màu tím đậm ấm áp
             ctx.fillStyle = "#3a1c71";
             ctx.fillRect(35, 0, canvas.width - 70, canvas.height);
 
-            // Cỏ ven đường màu xanh tươi hoạt hình
             ctx.fillStyle = "#26de81";
             ctx.fillRect(0, 0, 35, canvas.height);
             ctx.fillRect(canvas.width - 35, 0, 35, canvas.height);
 
-            // Chấm hoa cỏ hoặc sọc trang trí ven đường
             let decHeight = 40;
             let decOffset = roadOffset % decHeight;
             for (let y = -decHeight; y < canvas.height + decHeight; y += decHeight) {
-                ctx.fillStyle = "#20
+                ctx.fillStyle = "#20bf6b";
+                ctx.fillRect(8, y + decOffset, 18, 12);
+                ctx.fillRect(canvas.width - 26, y + decOffset, 18, 12);
+            }
+
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 6;
+            ctx.setLineDash([20, 20]);
+            ctx.lineDashOffset = -roadOffset;
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            for (let p of particles) {
+                ctx.fillStyle = `rgba(255, 235, 59, ${p.alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawCar(player.x, player.y, player.width, player.height, player.color, true);
+
+            for (let enemy of enemies) {
+                drawCar(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color, false);
+            }
+
+            if (gameOver) {
+                ctx.fillStyle = "rgba(43, 16, 85, 0.92)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#ff6b6b";
+                ctx.font = "bold 34px 'Comic Sans MS', cursive, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("💥 ÔI KHÔNG! 💥", canvas.width / 2, canvas.height / 2 - 45);
+                
+                ctx.fillStyle = "#ffe66d";
+                ctx.font = "bold 20px 'Comic Sans MS', cursive, sans-serif";
+                ctx.fillText("Điểm của bạn: " + score, canvas.width / 2, canvas.height / 2 - 5);
+                
+                ctx.fillStyle = "#ff758c";
+                ctx.beginPath();
+                ctx.roundRect(canvas.width / 2 - 80, canvas.height / 2 + 30, 160, 48, 24);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 18px 'Comic Sans MS', cursive, sans-serif";
+                ctx.fillText("CHƠI LẠI 🚗", canvas.width / 2, canvas.height / 2 + 60);
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
+"""
+
+components.html(game_code, height=630, scrolling=False)
 
