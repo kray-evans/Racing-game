@@ -4,9 +4,8 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="Retro Racing Game", page_icon="🏎️", layout="centered")
 
 st.title("🏎️ Mini Retro Racing Game")
-st.markdown("Sử dụng các phím mũi tên **Trái / Phải** hoặc các nút điều khiển bên dưới để né xe địch và ghi điểm!")
+st.markdown("Sử dụng bàn phím trên máy tính hoặc bấm các nút **Trái / Phải** bên dưới nếu chơi trên điện thoại!")
 
-# Mã HTML/JS cho game đua xe
 game_code = """
 <!DOCTYPE html>
 <html>
@@ -16,6 +15,7 @@ game_code = """
             margin: 0;
             background: #111;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -27,27 +27,31 @@ game_code = """
             border: 4px solid #fff;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
             background: #333;
+            max-width: 100%;
+            height: auto;
         }
         #ui {
-            position: absolute;
-            top: 20px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
+            margin-bottom: 5px;
         }
         .controls {
             margin-top: 10px;
             display: flex;
-            gap: 10px;
+            gap: 20px;
             justify-content: center;
         }
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
             background: #ff4757;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
         }
         button:active {
             background: #ff6b81;
@@ -56,7 +60,12 @@ game_code = """
 </head>
 <body>
     <div id="ui">Điểm: <span id="score">0</span></div>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    
+    <div class="controls">
+        <button id="leftBtn">◀ TRÁI</button>
+        <button id="rightBtn">PHẢI ▶</button>
+    </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -67,24 +76,39 @@ game_code = """
         let gameOver = false;
         let gameSpeed = 5;
 
-        // Xe người chơi
         let player = {
             x: 180,
-            y: 480,
+            y: 380,
             width: 40,
             height: 70,
             color: "#ff4757",
-            speed: 6
+            speed: 7
         };
 
-        // Danh sách xe chướng ngại vật
         let enemies = [];
         let roadLinesOffset = 0;
-
         let keys = {};
 
+        // Bắt sự kiện bàn phím máy tính
         window.addEventListener("keydown", (e) => { keys[e.key] = true; });
         window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+        // Bắt sự kiện cảm ứng / click cho nút mobile
+        const leftBtn = document.getElementById("leftBtn");
+        const rightBtn = document.getElementById("rightBtn");
+
+        let movingLeft = false;
+        let movingRight = false;
+
+        leftBtn.addEventListener("mousedown", () => { movingLeft = true; });
+        leftBtn.addEventListener("mouseup", () => { movingLeft = false; });
+        leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); movingLeft = true; });
+        leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); movingLeft = false; });
+
+        rightBtn.addEventListener("mousedown", () => { movingRight = true; });
+        rightBtn.addEventListener("mouseup", () => { movingRight = false; });
+        rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); movingRight = true; });
+        rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); movingRight = false; });
 
         function spawnEnemy() {
             let lanes = [40, 120, 200, 280];
@@ -103,32 +127,28 @@ game_code = """
         function update() {
             if (gameOver) return;
 
-            // Di chuyển người chơi
-            if ((keys["ArrowLeft"] || keys["a"]) && player.x > 30) {
+            // Xử lý di chuyển (bàn phím hoặc nút cảm ứng)
+            if ((keys["ArrowLeft"] || keys["a"] || movingLeft) && player.x > 30) {
                 player.x -= player.speed;
             }
-            if ((keys["ArrowRight"] || keys["d"]) && player.x < canvas.width - 70) {
+            if ((keys["ArrowRight"] || keys["d"] || movingRight) && player.x < canvas.width - 70) {
                 player.x += player.speed;
             }
 
-            // Hiệu ứng đường chạy
             roadLinesOffset += gameSpeed;
             if (roadLinesOffset > 40) roadLinesOffset = 0;
 
-            // Sinh xe địch
             spawnTimer++;
-            if (spawnTimer > 50) {
+            if (spawnTimer > 45) {
                 spawnEnemy();
                 spawnTimer = 0;
                 score += 10;
-                gameSpeed += 0.05; // Tăng dần độ khó
+                gameSpeed += 0.05;
             }
 
-            // Cập nhật vị trí xe địch
             for (let i = enemies.length - 1; i >= 0; i--) {
                 enemies[i].y += gameSpeed;
 
-                // Kiểm tra va chạm
                 if (
                     player.x < enemies[i].x + enemies[i].width &&
                     player.x + player.width > enemies[i].x &&
@@ -138,7 +158,6 @@ game_code = """
                     gameOver = true;
                 }
 
-                // Xóa xe qua màn hình
                 if (enemies[i].y > canvas.height) {
                     enemies.splice(i, 1);
                 }
@@ -150,29 +169,24 @@ game_code = """
         function drawCar(x, y, width, height, color) {
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
-            // Bánh xe
             ctx.fillStyle = "#000";
             ctx.fillRect(x - 6, y + 10, 6, 15);
             ctx.fillRect(x + width, y + 10, 6, 15);
             ctx.fillRect(x - 6, y + height - 25, 6, 15);
             ctx.fillRect(x + width, y + height - 25, 6, 15);
-            // Đèn trước
             ctx.fillStyle = "#fffa65";
             ctx.fillRect(x + 5, y, 8, 4);
             ctx.fillRect(x + width - 13, y, 8, 4);
         }
 
         function draw() {
-            // Vẽ nền đường
             ctx.fillStyle = "#555";
             ctx.fillRect(20, 0, canvas.width - 40, canvas.height);
 
-            // Lề đường
             ctx.fillStyle = "#ff4757";
             ctx.fillRect(0, 0, 20, canvas.height);
             ctx.fillRect(canvas.width - 20, 0, 20, canvas.height);
 
-            // Vạch kẻ đường giữa
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 4;
             ctx.setLineDash([20, 20]);
@@ -182,12 +196,10 @@ game_code = """
             ctx.moveTo(canvas.width / 2, 0);
             ctx.lineTo(canvas.width / 2, canvas.height);
             ctx.stroke();
-            ctx.setLineDash([]); // Reset dash
+            ctx.setLineDash([]);
 
-            // Vẽ xe người chơi
             drawCar(player.x, player.y, player.width, player.height, player.color);
 
-            // Vẽ xe địch
             for (let enemy of enemies) {
                 drawCar(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color);
             }
@@ -197,12 +209,12 @@ game_code = """
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = "white";
-                ctx.font = "30px Arial";
+                ctx.font = "26px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
                 
-                ctx.font = "18px Arial";
-                ctx.fillText("Nhấn F5 hoặc tải lại trang để chơi lại", canvas.width / 2, canvas.height / 2 + 20);
+                ctx.font = "16px Arial";
+                ctx.fillText("Tải lại trang để chơi lại", canvas.width / 2, canvas.height / 2 + 20);
             }
         }
 
@@ -218,5 +230,4 @@ game_code = """
 </html>
 """
 
-# Hiển thị game trong ứng dụng Streamlit
-components.html(game_code, height=650, scrolling=False)
+components.html(game_code, height=620, scrolling=False)
